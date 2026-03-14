@@ -29,12 +29,15 @@ Crie exatamente 6 slides educativos. Cada slide deve ter:
 - "body": explicação simples para a idade (máx 2 frases curtas)
 - "narrationText": texto para narração em áudio, mais detalhado e natural (como se estivesse falando com a criança), máx 3 frases
 - "visualType": um de ["text", "equation", "counting", "comparison", "example"]
-- "items": lista de itens visuais usando SOMENTE TEXTO, sem emojis. Para contagem use números ("1", "2", "3"). Para equações use expressões ("2 + 3 = 5"). Para exemplos use palavras descritivas.
+- "items": lista de itens visuais representando OBJETOS CONCRETOS relacionados ao conteúdo
 
-IMPORTANTE: 
+REGRAS PARA ITEMS:
+- Use palavras de OBJETOS CONCRETOS que a criança reconhece: "maçã", "estrela", "flor", "peixe", "sol", "lua", "árvore", "pássaro", "coração", "gota", "nuvem", "bola"
+- Para equações: separe cada parte em itens diferentes. Ex: para "2+3=5", use ["2", "+", "3", "=", "5"]. Os números serão representados como grupos de objetos visuais.
+- Para contagem: use o nome do objeto sendo contado. Ex: ["maçã", "maçã", "maçã"] para contar 3 maçãs
 - NÃO use emojis em nenhum campo
+- NÃO use frases longas nos items, use 1-3 palavras por item
 - Use linguagem MUITO simples e divertida
-- Os items devem ser texto puro para representações visuais
 - O narrationText deve soar natural como uma professora falando
 
 Responda APENAS com um array JSON válido de objetos, sem markdown, sem explicação.`;
