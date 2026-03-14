@@ -1,13 +1,31 @@
+export type ActorAnimation = "idle" | "bounce" | "float" | "walk" | "spin" | "pulse" | "wave" | "grow" | "sway";
+
+export interface SceneActor {
+  type: string;       // actor name: "dinosaur", "sun", "tree", etc.
+  x: number;          // 0-100 percentage horizontal position
+  y: number;          // 0-100 percentage vertical position
+  scale?: number;     // default 1
+  animation?: ActorAnimation;
+  color?: string;     // optional color override
+  flipX?: boolean;    // mirror horizontally
+}
+
+export interface SceneConfig {
+  backgroundGradient: string; // CSS gradient string
+  actors: SceneActor[];
+}
+
 export interface EducationSlide {
   title: string;
   body: string;
   narrationText?: string;
   visualType: "text" | "equation" | "counting" | "comparison" | "example";
   items?: string[];
+  scene?: SceneConfig;
   bgColor: string;
   textColor: string;
   audioUrl?: string;
-  durationInFrames?: number; // calculated from audio length
+  durationInFrames?: number;
 }
 
 export interface EducationContent {
