@@ -101,8 +101,10 @@ export async function generateTTS(text: string, voiceName = "Kore"): Promise<TTS
   return { audioUrl, durationSec };
 }
 
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 /**
- * Generate TTS for all slides, returning audio URLs and durations
+ * Generate TTS for all slides with rate-limit handling
  */
 export async function generateAllSlideTTS(
   slides: { title: string; body: string; narrationText?: string }[],
@@ -110,12 +112,32 @@ export async function generateAllSlideTTS(
   onProgress?: (done: number, total: number) => void
 ): Promise<TTSResult[]> {
   const results: TTSResult[] = [];
+  const DELAY_MS = 4000; // 4s between requests to avoid 429
+  const MAX_RETRIES = 2;
 
   for (let i = 0; i < slides.length; i++) {
     const slide = slides[i];
     const text = slide.narrationText || `${slide.title}. ${slide.body}`;
-    const result = await generateTTS(text, voiceName);
-    results.push(result);
+
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        if (i > 0 || attempt > 0) await delay(DELAY_MS);
+        const result = await generateTTS(text, voiceName);
+        results.push(result);
+        lastError = null;
+        break;
+      } catch (err: any) {
+        lastError = err;
+        if (err.message?.includes("429")) {
+          console.warn(`TTS rate limited on slide ${i + 1}, retrying in ${DELAY_MS * 2}ms...`);
+          await delay(DELAY_MS * 2);
+        } else {
+          throw err;
+        }
+      }
+    }
+    if (lastError) throw lastError;
     onProgress?.(i + 1, slides.length);
   }
 
