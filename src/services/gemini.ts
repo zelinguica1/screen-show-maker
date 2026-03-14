@@ -1,18 +1,11 @@
-import type { TopicFormData, EducationSlide, SceneConfig, SceneActor, ActorAnimation } from "@/types/education";
+import type { TopicFormData, EducationSlide, SceneConfig, VisualEffect, VisualEffectType } from "@/types/education";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-const AVAILABLE_ACTORS = [
-  "dinosauro", "peixe", "pássaro", "gato", "cachorro", "borboleta", "coelho",
-  "sol", "lua", "nuvem", "árvore", "flor", "estrela", "montanha", "chuva",
-  "casa", "carro", "foguete", "balão", "livro", "lápis", "bola",
-  "maçã", "banana", "bolo",
-  "criança", "menino", "menina", "professora",
-  "coração", "globo", "música", "número", "abc",
-];
-
-const AVAILABLE_ANIMATIONS: ActorAnimation[] = [
-  "idle", "bounce", "float", "walk", "spin", "pulse", "wave", "grow", "sway",
+const AVAILABLE_EFFECTS: VisualEffectType[] = [
+  "particles", "bubbles", "stars", "confetti", "waves",
+  "sparkles", "geometric", "rain", "snow", "hearts",
+  "leaves", "fireflies", "rings", "dots",
 ];
 
 export async function generateEducationalContent(
@@ -21,69 +14,68 @@ export async function generateEducationalContent(
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
   if (!apiKey) throw new Error("VITE_GOOGLE_API_KEY não configurada");
 
-  const colorPalettes = [
-    { bg: "#FBBF24", text: "#1E1B4B" },
-    { bg: "#34D399", text: "#1E1B4B" },
-    { bg: "#60A5FA", text: "#FFFFFF" },
-    { bg: "#F472B6", text: "#FFFFFF" },
-    { bg: "#A78BFA", text: "#FFFFFF" },
-    { bg: "#FB923C", text: "#1E1B4B" },
-    { bg: "#2DD4BF", text: "#1E1B4B" },
-    { bg: "#F87171", text: "#FFFFFF" },
-  ];
-
-  const prompt = `Você é um educador infantil criando conteúdo para crianças de ${form.ageMin} a ${form.ageMax} anos.
+  const prompt = `Você é um educador infantil experiente criando um vídeo educativo completo para crianças de ${form.ageMin} a ${form.ageMax} anos.
 
 Tema: "${form.topic}"
 Idioma: ${form.language}
 
-Crie exatamente 6 slides educativos. Cada slide deve ter:
-- "title": título curto e divertido (máx 5 palavras)
-- "body": explicação simples para a idade (máx 2 frases curtas)
-- "narrationText": texto para narração em áudio, mais detalhado e natural (como se estivesse falando com a criança), máx 3 frases
-- "scene": objeto de cena com atores animados (OBRIGATÓRIO, detalhes abaixo)
+CRIE O NÚMERO DE SLIDES NECESSÁRIO para explicar o tema COMPLETAMENTE para crianças desta faixa etária. Não limite a 6 slides - use quantos forem necessários (normalmente 8-15 slides). Lembre-se: crianças precisam de explicações detalhadas, com repetição e exemplos.
+
+ESTRUTURA SUGERIDA:
+1. Slide de abertura (apresentando o tema de forma divertida)
+2-3. Slides introdutórios (contexto simples)
+4+. Slides de conteúdo (explicações com exemplos concretos)
+- Slides de prática/exercício (se aplicável)
+- Slide de resumo/revisão
+- Slide de encerramento (despedida motivacional)
+
+Cada slide deve ter:
+- "title": título curto e divertido (máx 6 palavras)
+- "body": explicação simples para a idade (máx 3 frases curtas)
+- "narrationText": texto para narração em áudio, detalhado e natural (como uma professora falando com a criança), 2-4 frases
+- "scene": configuração visual do slide (OBRIGATÓRIO)
 
 FORMATO DA CENA (scene):
 {
-  "backgroundGradient": "linear-gradient(180deg, #cor1, #cor2)" // gradiente CSS do fundo
-  "actors": [  // 2-6 atores por cena
+  "backgroundGradient": "linear-gradient(135deg, #cor1, #cor2, #cor3)" // gradiente CSS rico
+  "effects": [  // 1-3 efeitos visuais por cena
     {
-      "type": "nome_do_ator",  // DEVE ser um dos atores disponíveis abaixo
-      "x": 50,     // posição horizontal 0-100 (porcentagem)
-      "y": 70,     // posição vertical 0-100 (porcentagem)
-      "scale": 1.2, // tamanho (0.5 a 2.0)
-      "animation": "bounce", // tipo de animação
-      "flipX": false // espelhar horizontalmente (opcional)
+      "type": "tipo_do_efeito",
+      "color": "#hexcolor",     // cor do efeito (opcional)
+      "density": 5,             // 1-10, quantidade de elementos
+      "speed": 1,               // 0.5-3, velocidade da animação
+      "size": 1                 // 0.5-2, tamanho dos elementos
     }
   ]
 }
 
-ATORES DISPONÍVEIS (use EXATAMENTE estes nomes):
-${AVAILABLE_ACTORS.join(", ")}
-
-ANIMAÇÕES DISPONÍVEIS:
-${AVAILABLE_ANIMATIONS.join(", ")}
-- idle: flutuação suave (padrão)
-- bounce: pula para cima e para baixo
-- float: flutua suavemente em círculo
-- walk: anda para os lados
-- spin: gira continuamente
-- pulse: pulsa de tamanho
-- wave: balança
-- grow: cresce ao aparecer
-- sway: balança suavemente
+EFEITOS DISPONÍVEIS (use EXATAMENTE estes nomes):
+- particles: partículas flutuantes (bom para slides suaves e mágicos)
+- bubbles: bolhas subindo (bom para temas aquáticos, ciência)
+- stars: estrelas cintilantes (bom para noite, espaço, celebração)
+- confetti: confete colorido caindo (bom para celebração, abertura, encerramento)
+- waves: ondas animadas na parte inferior (bom para oceano, natureza, calma)
+- sparkles: brilhos pulsantes (bom para magia, destaque, números)
+- geometric: formas geométricas flutuantes (bom para matemática, formas)
+- rain: chuva caindo (bom para clima, água, natureza)
+- snow: neve caindo suavemente (bom para inverno, clima frio)
+- hearts: corações subindo (bom para emoções, família, amor)
+- leaves: folhas caindo (bom para natureza, outono, árvores)
+- fireflies: vagalumes brilhantes (bom para noite, floresta, magia)
+- rings: anéis concêntricos expandindo (bom para som, ciência, energia)
+- dots: grade de pontos pulsantes (bom para tecnologia, padrões, ritmo)
 
 REGRAS IMPORTANTES:
-- Cada cena deve ter entre 2 e 6 atores
-- Distribua os atores pela tela (x: 10-90, y: 20-85)
-- O título e corpo do slide aparecem no centro superior, então coloque atores mais na parte inferior (y: 50-85)
-- Use scales variados para criar profundidade (objetos menores atrás, maiores na frente)
-- Escolha animações que façam sentido para o ator (pássaro: float, bola: bounce, árvore: sway)
-- Para temas de MATEMÁTICA: use atores concretos para representar números (ex: 3 maçãs para o número 3)
-- Para SOMA/SUBTRAÇÃO: agrupe atores em lados diferentes da tela
+- Use entre 1 e 3 efeitos por cena (não mais que 3)
+- Escolha efeitos que COMBINEM com o conteúdo do slide
+- Use gradientes bonitos e vibrantes (3 cores no gradiente)
+- Varie os gradientes entre slides para criar diversidade visual
+- O texto aparece NO CENTRO da tela, então os efeitos são um FUNDO decorativo
 - NÃO use emojis em nenhum campo
 - Use linguagem MUITO simples e divertida
-- O narrationText deve soar natural como uma professora falando
+- O narrationText deve soar natural como uma professora carinhosa falando
+- Para temas de matemática: detalhe cada passo com exemplos concretos
+- Cada slide deve trazer uma informação nova ou exemplo diferente
 
 Responda APENAS com um array JSON válido de objetos, sem markdown, sem explicação.`;
 
@@ -94,7 +86,7 @@ Responda APENAS com um array JSON válido de objetos, sem markdown, sem explica�
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 16384,
         responseMimeType: "application/json",
         thinkingConfig: {
           thinkingBudget: 0,
@@ -214,23 +206,52 @@ Responda APENAS com um array JSON válido de objetos, sem markdown, sem explica�
     slides = JSON.parse(jsonStr);
   }
 
+  // Predefined palette for fallback gradients
+  const gradients = [
+    "linear-gradient(135deg, #667eea, #764ba2, #f093fb)",
+    "linear-gradient(135deg, #f093fb, #f5576c, #ffd400)",
+    "linear-gradient(135deg, #4facfe, #00f2fe, #43e97b)",
+    "linear-gradient(135deg, #fa709a, #fee140, #fa709a)",
+    "linear-gradient(135deg, #a18cd1, #fbc2eb, #a6c1ee)",
+    "linear-gradient(135deg, #ffecd2, #fcb69f, #ff9a9e)",
+    "linear-gradient(135deg, #89f7fe, #66a6ff, #667eea)",
+    "linear-gradient(135deg, #fdcbf1, #e6dee9, #a1c4fd)",
+    "linear-gradient(135deg, #f6d365, #fda085, #f093fb)",
+    "linear-gradient(135deg, #96fbc4, #f9f586, #67b26f)",
+    "linear-gradient(135deg, #c471f5, #fa71cd, #fbc2eb)",
+    "linear-gradient(135deg, #48c6ef, #6f86d6, #764ba2)",
+  ];
+
+  const textColors = [
+    "#FFFFFF", "#FFFFFF", "#FFFFFF", "#1E1B4B",
+    "#1E1B4B", "#1E1B4B", "#FFFFFF", "#1E1B4B",
+    "#1E1B4B", "#1E1B4B", "#FFFFFF", "#FFFFFF",
+  ];
+
   return slides.map((slide, i): EducationSlide => {
-    const palette = colorPalettes[i % colorPalettes.length];
-    
-    // Parse scene if provided
+    // Parse scene
     let scene: SceneConfig | undefined;
-    if (slide.scene && slide.scene.actors && Array.isArray(slide.scene.actors)) {
+    if (slide.scene && slide.scene.effects && Array.isArray(slide.scene.effects)) {
       scene = {
-        backgroundGradient: slide.scene.backgroundGradient || `linear-gradient(180deg, ${palette.bg}, ${palette.bg}dd)`,
-        actors: slide.scene.actors.map((a: any): SceneActor => ({
-          type: String(a.type || "estrela"),
-          x: Number(a.x) || 50,
-          y: Number(a.y) || 60,
-          scale: Number(a.scale) || 1,
-          animation: (AVAILABLE_ANIMATIONS.includes(a.animation) ? a.animation : "idle") as ActorAnimation,
-          flipX: Boolean(a.flipX),
-          color: a.color || undefined,
-        })),
+        backgroundGradient: slide.scene.backgroundGradient || gradients[i % gradients.length],
+        effects: slide.scene.effects
+          .filter((e: any) => AVAILABLE_EFFECTS.includes(e.type))
+          .slice(0, 3)
+          .map((e: any): VisualEffect => ({
+            type: e.type as VisualEffectType,
+            color: e.color || undefined,
+            density: Math.min(10, Math.max(1, Number(e.density) || 5)),
+            speed: Math.min(3, Math.max(0.5, Number(e.speed) || 1)),
+            size: Math.min(2, Math.max(0.5, Number(e.size) || 1)),
+          })),
+      };
+    }
+
+    // Fallback scene if none provided
+    if (!scene) {
+      scene = {
+        backgroundGradient: gradients[i % gradients.length],
+        effects: [{ type: "particles" as VisualEffectType, density: 4, speed: 0.8 }],
       };
     }
 
@@ -238,11 +259,9 @@ Responda APENAS com um array JSON válido de objetos, sem markdown, sem explica�
       title: slide.title || "Slide",
       body: slide.body || "",
       narrationText: slide.narrationText || `${slide.title}. ${slide.body}`,
-      visualType: slide.visualType || "text",
-      items: slide.items || [],
       scene,
-      bgColor: palette.bg,
-      textColor: palette.text,
+      bgColor: "#000",
+      textColor: textColors[i % textColors.length],
     };
   });
 }

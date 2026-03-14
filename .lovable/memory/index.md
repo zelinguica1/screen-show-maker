@@ -9,21 +9,24 @@ Preferences and decisions for TutorialKids project.
 
 ## Visuals
 - NO emojis anywhere in slides or video
-- Scene-based rendering: each slide has a SceneConfig with SceneActors
-- 25+ SVG actor components in src/components/visuals/actors/index.tsx
-- Actors: dinosauro, peixe, pássaro, gato, cachorro, borboleta, coelho, sol, lua, nuvem, árvore, flor, estrela, montanha, chuva, casa, carro, foguete, balão, livro, lápis, bola, maçã, banana, bolo, criança, professora, coração, globo, música, número, abc
-- Animations: idle, bounce, float, walk, spin, pulse, wave, grow, sway
-- SceneRenderer positions actors absolutely by x/y percentage
-- Actors have staggered spring entrance + continuous animation
-- FallbackActor renders a generic pulsing circle for unknown actor types
-- Gemini prompt outputs scene configs with actor placements
+- NO SVG actor icons (user rejected them)
+- NO Lottie (requires API key, not viable without LottieFiles account)
+- Uses Remotion visual EFFECTS system: particles, bubbles, stars, confetti, waves, sparkles, geometric, rain, snow, hearts, leaves, fireflies, rings, dots
+- Effects are rendered as animated CSS/SVG elements using Remotion's useCurrentFrame
+- Each slide has a SceneConfig with backgroundGradient + 1-3 effects
+- Deterministic pseudo-random positioning (seeded) for Remotion compatibility
+- Text overlays have backdrop blur when scene is active
+
+## Slides
+- NO fixed slide limit — Gemini decides count based on topic (typically 8-15)
+- maxOutputTokens set to 16384 to support longer content
+- Prompt instructs detailed, child-friendly explanations with examples
+- Suggested structure: opening → intro → content → practice → summary → closing
 
 ## Architecture
-- SceneConfig: { backgroundGradient, actors[] }
-- SceneActor: { type, x, y, scale, animation, color, flipX }
-- Old SlideVisuals system still exists as fallback (items/visualType)
-- Text overlay has backdrop blur when scene is active
-
-## Design
-- Color palettes assigned from predefined list
-- Items in slides must be text-only, no emoji characters
+- SceneConfig: { backgroundGradient, effects[] }
+- VisualEffect: { type, color, density, speed, size }
+- Effects in src/components/visuals/effects/index.tsx
+- SceneRenderer in src/components/visuals/SceneRenderer.tsx
+- Fallback: particles effect if Gemini doesn't provide scene
+- 12 predefined gradient palettes for variety

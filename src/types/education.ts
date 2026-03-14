@@ -1,31 +1,44 @@
-export type ActorAnimation = "idle" | "bounce" | "float" | "walk" | "spin" | "pulse" | "wave" | "grow" | "sway";
+export type VisualEffectType =
+  | "particles"
+  | "bubbles"
+  | "stars"
+  | "confetti"
+  | "waves"
+  | "sparkles"
+  | "geometric"
+  | "rain"
+  | "snow"
+  | "hearts"
+  | "leaves"
+  | "fireflies"
+  | "rings"
+  | "dots";
 
-export interface SceneActor {
-  type: string;       // actor name: "dinosaur", "sun", "tree", etc.
-  x: number;          // 0-100 percentage horizontal position
-  y: number;          // 0-100 percentage vertical position
-  scale?: number;     // default 1
-  animation?: ActorAnimation;
-  color?: string;     // optional color override
-  flipX?: boolean;    // mirror horizontally
+export interface VisualEffect {
+  type: VisualEffectType;
+  color?: string;
+  density?: number; // 1-10, default 5
+  speed?: number;   // 0.5-3, default 1
+  size?: number;    // 0.5-2, default 1
 }
 
 export interface SceneConfig {
-  backgroundGradient: string; // CSS gradient string
-  actors: SceneActor[];
+  backgroundGradient: string;
+  effects: VisualEffect[];
 }
 
 export interface EducationSlide {
   title: string;
   body: string;
   narrationText?: string;
-  visualType: "text" | "equation" | "counting" | "comparison" | "example";
-  items?: string[];
   scene?: SceneConfig;
   bgColor: string;
   textColor: string;
   audioUrl?: string;
   durationInFrames?: number;
+  // Legacy fields kept for backwards compatibility
+  visualType?: string;
+  items?: string[];
 }
 
 export interface EducationContent {

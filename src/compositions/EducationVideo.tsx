@@ -31,7 +31,7 @@ const EducationSlideView: React.FC<EducationSlideViewProps> = ({
   const titleY = spring({ frame, fps, config: { damping: 15, stiffness: 100 } });
   const bodyDelay = spring({ frame: frame - 15, fps, config: { damping: 15, stiffness: 100 } });
 
-  const hasScene = slide.scene && slide.scene.actors && slide.scene.actors.length > 0;
+  const hasScene = slide.scene && slide.scene.effects && slide.scene.effects.length > 0;
 
   return (
     <AbsoluteFill
@@ -41,7 +41,7 @@ const EducationSlideView: React.FC<EducationSlideViewProps> = ({
         fontFamily: "'Space Grotesk', system-ui, sans-serif",
       }}
     >
-      {/* Scene with animated actors */}
+      {/* Scene with visual effects */}
       {hasScene && <SceneRenderer scene={slide.scene!} />}
 
       {/* Text overlay */}
@@ -52,59 +52,59 @@ const EducationSlideView: React.FC<EducationSlideViewProps> = ({
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "flex-start",
-          paddingTop: 60,
+          justifyContent: "center",
+          height: "100%",
           paddingLeft: 80,
           paddingRight: 80,
         }}
       >
-        {/* Title with backdrop */}
+        {/* Title */}
         <div
           style={{
-            background: hasScene ? "rgba(0,0,0,0.35)" : "transparent",
-            borderRadius: 20,
-            padding: hasScene ? "16px 40px" : "0",
-            backdropFilter: hasScene ? "blur(8px)" : "none",
+            background: hasScene ? "rgba(0,0,0,0.4)" : "transparent",
+            borderRadius: 24,
+            padding: hasScene ? "20px 48px" : "0",
+            backdropFilter: hasScene ? "blur(12px)" : "none",
+            marginBottom: 20,
           }}
         >
           <h1
             style={{
-              fontSize: 68,
+              fontSize: 72,
               fontWeight: 800,
               color: hasScene ? "#FFFFFF" : slide.textColor,
               textAlign: "center",
-              marginBottom: 0,
+              margin: 0,
               transform: `translateY(${interpolate(titleY, [0, 1], [30, 0])}px)`,
               opacity: titleY,
               lineHeight: 1.1,
-              textShadow: hasScene ? "0 2px 12px rgba(0,0,0,0.4)" : "none",
+              textShadow: hasScene ? "0 3px 16px rgba(0,0,0,0.5)" : "none",
             }}
           >
             {slide.title}
           </h1>
         </div>
 
-        {/* Body with backdrop */}
+        {/* Body */}
         <div
           style={{
-            background: hasScene ? "rgba(0,0,0,0.25)" : "transparent",
-            borderRadius: 16,
-            padding: hasScene ? "12px 32px" : "0",
-            marginTop: 16,
-            backdropFilter: hasScene ? "blur(6px)" : "none",
+            background: hasScene ? "rgba(0,0,0,0.3)" : "transparent",
+            borderRadius: 20,
+            padding: hasScene ? "16px 40px" : "0",
+            backdropFilter: hasScene ? "blur(8px)" : "none",
             maxWidth: "85%",
           }}
         >
           <p
             style={{
-              fontSize: 36,
+              fontSize: 40,
               color: hasScene ? "#FFFFFF" : slide.textColor,
               textAlign: "center",
               opacity: bodyDelay,
               transform: `translateY(${interpolate(bodyDelay, [0, 1], [20, 0])}px)`,
               lineHeight: 1.4,
               fontWeight: 500,
-              textShadow: hasScene ? "0 1px 8px rgba(0,0,0,0.3)" : "none",
+              textShadow: hasScene ? "0 2px 10px rgba(0,0,0,0.4)" : "none",
               margin: 0,
             }}
           >

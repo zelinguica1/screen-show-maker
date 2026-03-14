@@ -125,14 +125,13 @@ export default function Editor() {
               <button
                 key={i}
                 onClick={() => setSelectedIdx(i)}
-                className={`h-10 rounded-md flex items-center justify-center text-xs font-medium transition-all ${
+                className={`h-10 rounded-md flex items-center justify-center text-xs font-bold text-white transition-all ${
                   selectedIdx === i
                     ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
                     : ""
                 }`}
                 style={{
-                  backgroundColor: slide.bgColor,
-                  color: slide.textColor,
+                  background: slide.scene?.backgroundGradient || slide.bgColor,
                   flex: slide.durationInFrames || 150,
                 }}
               >
@@ -152,10 +151,9 @@ export default function Editor() {
             <div className="space-y-4 animate-fade-in">
               {/* Preview chip */}
               <div
-                className="rounded-lg p-4 text-center"
+                className="rounded-lg p-4 text-center text-white"
                 style={{
-                  backgroundColor: selected.bgColor,
-                  color: selected.textColor,
+                  background: selected.scene?.backgroundGradient || selected.bgColor,
                 }}
               >
                 <p className="font-bold text-sm">{selected.title}</p>
