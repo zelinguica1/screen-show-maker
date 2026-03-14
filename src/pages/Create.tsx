@@ -214,6 +214,19 @@ export default function Create() {
             </div>
           </div>
 
+          {/* Audio Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                Narração em áudio
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Gerar voz com IA para cada slide
+              </p>
+            </div>
+            <Switch checked={withAudio} onCheckedChange={setWithAudio} disabled={loading} />
+          </div>
+
           {/* Progress */}
           {loading && (
             <div className="space-y-2">
