@@ -1,6 +1,19 @@
-import type { TopicFormData, EducationSlide } from "@/types/education";
+import type { TopicFormData, EducationSlide, SceneConfig, SceneActor, ActorAnimation } from "@/types/education";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+
+const AVAILABLE_ACTORS = [
+  "dinosauro", "peixe", "pássaro", "gato", "cachorro", "borboleta", "coelho",
+  "sol", "lua", "nuvem", "árvore", "flor", "estrela", "montanha", "chuva",
+  "casa", "carro", "foguete", "balão", "livro", "lápis", "bola",
+  "maçã", "banana", "bolo",
+  "criança", "menino", "menina", "professora",
+  "coração", "globo", "música", "número", "abc",
+];
+
+const AVAILABLE_ANIMATIONS: ActorAnimation[] = [
+  "idle", "bounce", "float", "walk", "spin", "pulse", "wave", "grow", "sway",
+];
 
 export async function generateEducationalContent(
   form: TopicFormData
@@ -28,15 +41,47 @@ Crie exatamente 6 slides educativos. Cada slide deve ter:
 - "title": título curto e divertido (máx 5 palavras)
 - "body": explicação simples para a idade (máx 2 frases curtas)
 - "narrationText": texto para narração em áudio, mais detalhado e natural (como se estivesse falando com a criança), máx 3 frases
-- "visualType": um de ["text", "equation", "counting", "comparison", "example"]
-- "items": lista de itens visuais representando OBJETOS CONCRETOS relacionados ao conteúdo
+- "scene": objeto de cena com atores animados (OBRIGATÓRIO, detalhes abaixo)
 
-REGRAS PARA ITEMS:
-- Use palavras de OBJETOS CONCRETOS que a criança reconhece: "maçã", "estrela", "flor", "peixe", "sol", "lua", "árvore", "pássaro", "coração", "gota", "nuvem", "bola"
-- Para equações: separe cada parte em itens diferentes. Ex: para "2+3=5", use ["2", "+", "3", "=", "5"]. Os números serão representados como grupos de objetos visuais.
-- Para contagem: use o nome do objeto sendo contado. Ex: ["maçã", "maçã", "maçã"] para contar 3 maçãs
+FORMATO DA CENA (scene):
+{
+  "backgroundGradient": "linear-gradient(180deg, #cor1, #cor2)" // gradiente CSS do fundo
+  "actors": [  // 2-6 atores por cena
+    {
+      "type": "nome_do_ator",  // DEVE ser um dos atores disponíveis abaixo
+      "x": 50,     // posição horizontal 0-100 (porcentagem)
+      "y": 70,     // posição vertical 0-100 (porcentagem)
+      "scale": 1.2, // tamanho (0.5 a 2.0)
+      "animation": "bounce", // tipo de animação
+      "flipX": false // espelhar horizontalmente (opcional)
+    }
+  ]
+}
+
+ATORES DISPONÍVEIS (use EXATAMENTE estes nomes):
+${AVAILABLE_ACTORS.join(", ")}
+
+ANIMAÇÕES DISPONÍVEIS:
+${AVAILABLE_ANIMATIONS.join(", ")}
+- idle: flutuação suave (padrão)
+- bounce: pula para cima e para baixo
+- float: flutua suavemente em círculo
+- walk: anda para os lados
+- spin: gira continuamente
+- pulse: pulsa de tamanho
+- wave: balança
+- grow: cresce ao aparecer
+- sway: balança suavemente
+
+REGRAS IMPORTANTES:
+- Cada cena deve ter entre 2 e 6 atores
+- Distribua os atores pela tela (x: 10-90, y: 20-85)
+- O título e corpo do slide aparecem no centro superior, então coloque atores mais na parte inferior (y: 50-85)
+- Use scales variados para criar profundidade (objetos menores atrás, maiores na frente)
+- Escolha animações que façam sentido para o ator (pássaro: float, bola: bounce, árvore: sway)
+- Para temas de MATEMÁTICA: use atores concretos para representar números (ex: 3 maçãs para o número 3)
+- Para SOMA/SUBTRAÇÃO: agrupe atores em lados diferentes da tela
 - NÃO use emojis em nenhum campo
-- NÃO use frases longas nos items, use 1-3 palavras por item
 - Use linguagem MUITO simples e divertida
 - O narrationText deve soar natural como uma professora falando
 
@@ -49,7 +94,7 @@ Responda APENAS com um array JSON válido de objetos, sem markdown, sem explica�
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 4096,
+        maxOutputTokens: 8192,
         responseMimeType: "application/json",
         thinkingConfig: {
           thinkingBudget: 0,
@@ -169,13 +214,35 @@ Responda APENAS com um array JSON válido de objetos, sem markdown, sem explica�
     slides = JSON.parse(jsonStr);
   }
 
-  return slides.map((slide, i): EducationSlide => ({
-    title: slide.title || "Slide",
-    body: slide.body || "",
-    narrationText: slide.narrationText || `${slide.title}. ${slide.body}`,
-    visualType: slide.visualType || "text",
-    items: slide.items || [],
-    bgColor: colorPalettes[i % colorPalettes.length].bg,
-    textColor: colorPalettes[i % colorPalettes.length].text,
-  }));
+  return slides.map((slide, i): EducationSlide => {
+    const palette = colorPalettes[i % colorPalettes.length];
+    
+    // Parse scene if provided
+    let scene: SceneConfig | undefined;
+    if (slide.scene && slide.scene.actors && Array.isArray(slide.scene.actors)) {
+      scene = {
+        backgroundGradient: slide.scene.backgroundGradient || `linear-gradient(180deg, ${palette.bg}, ${palette.bg}dd)`,
+        actors: slide.scene.actors.map((a: any): SceneActor => ({
+          type: String(a.type || "estrela"),
+          x: Number(a.x) || 50,
+          y: Number(a.y) || 60,
+          scale: Number(a.scale) || 1,
+          animation: (AVAILABLE_ANIMATIONS.includes(a.animation) ? a.animation : "idle") as ActorAnimation,
+          flipX: Boolean(a.flipX),
+          color: a.color || undefined,
+        })),
+      };
+    }
+
+    return {
+      title: slide.title || "Slide",
+      body: slide.body || "",
+      narrationText: slide.narrationText || `${slide.title}. ${slide.body}`,
+      visualType: slide.visualType || "text",
+      items: slide.items || [],
+      scene,
+      bgColor: palette.bg,
+      textColor: palette.text,
+    };
+  });
 }
