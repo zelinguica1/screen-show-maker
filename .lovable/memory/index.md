@@ -9,12 +9,20 @@ Preferences and decisions for TutorialKids project.
 
 ## Visuals
 - NO emojis anywhere in slides or video
-- Uses React components (SlideVisuals) for visual representations based on visualType
-- visualType options: text, equation, counting, comparison, example
-- EducationIcons.tsx has 12 SVG icons: apple, star, heart, circle, fish, flower, sun, tree, moon, bird, cloud, drop
-- Icons matched to items via keyword search in getIconForItem()
-- Remotion spring animations: staggered entrance + idle bounce per item
-- Gemini prompt instructs to use concrete object names matching icon keywords
+- Scene-based rendering: each slide has a SceneConfig with SceneActors
+- 25+ SVG actor components in src/components/visuals/actors/index.tsx
+- Actors: dinosauro, peixe, pássaro, gato, cachorro, borboleta, coelho, sol, lua, nuvem, árvore, flor, estrela, montanha, chuva, casa, carro, foguete, balão, livro, lápis, bola, maçã, banana, bolo, criança, professora, coração, globo, música, número, abc
+- Animations: idle, bounce, float, walk, spin, pulse, wave, grow, sway
+- SceneRenderer positions actors absolutely by x/y percentage
+- Actors have staggered spring entrance + continuous animation
+- FallbackActor renders a generic pulsing circle for unknown actor types
+- Gemini prompt outputs scene configs with actor placements
+
+## Architecture
+- SceneConfig: { backgroundGradient, actors[] }
+- SceneActor: { type, x, y, scale, animation, color, flipX }
+- Old SlideVisuals system still exists as fallback (items/visualType)
+- Text overlay has backdrop blur when scene is active
 
 ## Design
 - Color palettes assigned from predefined list
