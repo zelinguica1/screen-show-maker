@@ -47,6 +47,7 @@ Responda APENAS com um array JSON vÃ¡lido de objetos, sem markdown, sem explicaÃ
       generationConfig: {
         temperature: 0.8,
         maxOutputTokens: 2048,
+        responseMimeType: "application/json",
       },
     }),
   });
@@ -73,7 +74,21 @@ Responda APENAS com um array JSON vÃ¡lido de objetos, sem markdown, sem explicaÃ
   const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error("JSON nÃ£o encontrado na resposta");
   
-  const slides: any[] = JSON.parse(jsonMatch[0]);
+  // Fix common JSON issues from Gemini: trailing commas, unescaped quotes
+  let jsonStr = jsonMatch[0]
+    .replace(/,\s*([}\]])/g, "$1")           // trailing commas
+    .replace(/(['"])?(\w+)(['"])?\s*:/g, '"$2":') // unquoted keys
+    .replace(/:\s*'([^']*)'/g, ': "$1"');     // single-quoted values
+  
+  let slides: any[];
+  try {
+    slides = JSON.parse(jsonStr);
+  } catch (e) {
+    console.error("JSON parse failed, attempting repair:", jsonStr);
+    // Last resort: try to eval-safe parse by replacing problematic chars
+    jsonStr = jsonStr.replace(/[\x00-\x1F\x7F]/g, " ");
+    slides = JSON.parse(jsonStr);
+  }
 
   return slides.map((slide, i): EducationSlide => ({
     title: slide.title || "Slide",
