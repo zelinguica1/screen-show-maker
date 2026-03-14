@@ -1,12 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, GraduationCap, Loader2 } from "lucide-react";
+import { Sparkles, GraduationCap, Loader2, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { generateEducationalContent } from "@/services/gemini";
-import type { TopicFormData } from "@/types/education";
+import { generateAllSlideTTS } from "@/services/geminiTTS";
+import type { TopicFormData, EducationSlide } from "@/types/education";
 import { useToast } from "@/hooks/use-toast";
+
+const FPS = 30;
+const MIN_SLIDE_FRAMES = 90; // 3s minimum
+const PADDING_FRAMES = 30; // 1s padding after audio
 
 const LANGUAGES = [
   { value: "português-BR", label: "🇧🇷 Português (BR)" },
@@ -15,18 +21,20 @@ const LANGUAGES = [
 ];
 
 const PRESETS = [
-  { topic: "Como fazer uma soma?", emoji: "➕" },
-  { topic: "As cores do arco-íris", emoji: "🌈" },
-  { topic: "Animais da fazenda", emoji: "🐄" },
-  { topic: "Os números de 1 a 10", emoji: "🔢" },
-  { topic: "As vogais", emoji: "🔤" },
-  { topic: "Os planetas do sistema solar", emoji: "🪐" },
+  { topic: "Como fazer uma soma?", label: "Soma" },
+  { topic: "As cores do arco-íris", label: "Cores" },
+  { topic: "Animais da fazenda", label: "Animais" },
+  { topic: "Os números de 1 a 10", label: "Números" },
+  { topic: "As vogais", label: "Vogais" },
+  { topic: "Os planetas do sistema solar", label: "Planetas" },
 ];
 
 export default function Create() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<"idle" | "content" | "audio">("idle");
+  const [audioProgress, setAudioProgress] = useState(0);
   const [form, setForm] = useState<TopicFormData>({
     topic: "",
     ageMin: 4,
@@ -42,10 +50,41 @@ export default function Create() {
 
     setLoading(true);
     try {
+      // Step 1: Generate content
+      setStep("content");
       const slides = await generateEducationalContent(form);
-      // Store in sessionStorage and navigate
-      sessionStorage.setItem("educationSlides", JSON.stringify(slides));
+
+      // Step 2: Generate audio for each slide
+      setStep("audio");
+      setAudioProgress(0);
+
+      const ttsResults = await generateAllSlideTTS(
+        slides,
+        "Kore",
+        (done, total) => setAudioProgress(Math.round((done / total) * 100))
+      );
+
+      // Step 3: Merge audio data into slides with calculated durations
+      const slidesWithAudio: EducationSlide[] = slides.map((slide, i) => {
+        const tts = ttsResults[i];
+        const audioFrames = Math.ceil(tts.durationSec * FPS);
+        const durationInFrames = Math.max(audioFrames + PADDING_FRAMES, MIN_SLIDE_FRAMES);
+        return {
+          ...slide,
+          audioUrl: tts.audioUrl,
+          durationInFrames,
+        };
+      });
+
+      // Store and navigate
+      // Note: audioUrl are blob URLs, they persist in memory during the session
+      const storableSlides = slidesWithAudio.map(({ audioUrl, ...rest }) => rest);
+      sessionStorage.setItem("educationSlides", JSON.stringify(storableSlides));
       sessionStorage.setItem("educationTopic", form.topic);
+
+      // Store audio URLs in a global for the editor to pick up
+      (window as any).__tutorialKidsAudio = slidesWithAudio.map((s) => s.audioUrl);
+
       navigate("/editor");
     } catch (err: any) {
       console.error(err);
@@ -56,6 +95,7 @@ export default function Create() {
       });
     } finally {
       setLoading(false);
+      setStep("idle");
     }
   };
 
@@ -71,7 +111,7 @@ export default function Create() {
             Tutorial<span className="text-primary">Kids</span>
           </h1>
           <p className="text-muted-foreground text-sm">
-            Crie vídeos educativos para crianças com IA ✨
+            Crie vídeos educativos para crianças com IA
           </p>
         </div>
 
@@ -100,7 +140,7 @@ export default function Create() {
                 disabled={loading}
                 className="text-xs px-3 py-1.5 rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors border border-border"
               >
-                {p.emoji} {p.topic}
+                {p.label}
               </button>
             ))}
           </div>
@@ -160,6 +200,26 @@ export default function Create() {
             </div>
           </div>
 
+          {/* Progress */}
+          {loading && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {step === "content" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Gerando conteúdo educativo...
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-4 h-4 animate-pulse" />
+                    Gerando narração em áudio... {audioProgress}%
+                  </>
+                )}
+              </div>
+              <Progress value={step === "content" ? 30 : 30 + audioProgress * 0.7} />
+            </div>
+          )}
+
           {/* Generate Button */}
           <Button
             onClick={handleGenerate}
@@ -169,7 +229,7 @@ export default function Create() {
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Gerando conteúdo...
+                {step === "content" ? "Gerando conteúdo..." : "Gerando áudio..."}
               </>
             ) : (
               <>
@@ -181,7 +241,7 @@ export default function Create() {
         </div>
 
         <p className="text-center text-[10px] text-muted-foreground">
-          Powered by Gemini 2.5 Flash · Conteúdo gerado por IA
+          Powered by Gemini 2.5 Flash · Conteúdo e narração gerados por IA
         </p>
       </div>
     </div>
