@@ -54,14 +54,27 @@ Responda APENAS com um array JSON válido de objetos, sem markdown, sem explica�
   }
 
   const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  // Gemini 2.5 Flash may return multiple parts (thinking + text)
+  const parts = data.candidates?.[0]?.content?.parts;
+  if (!parts || parts.length === 0) throw new Error("Resposta vazia da API");
+  
+  // Find the last text part (skip thinking parts)
+  const textPart = [...parts].reverse().find((p: any) => p.text && !p.thought);
+  const text = textPart?.text;
   
   if (!text) throw new Error("Resposta vazia da API");
+
+  console.log("Gemini raw text:", text);
 
   // Clean markdown code blocks if present
   const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
   
-  const slides: any[] = JSON.parse(cleaned);
+  // Extract JSON array from response
+  const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) throw new Error("JSON não encontrado na resposta");
+  
+  const slides: any[] = JSON.parse(jsonMatch[0]);
 
   // Assign colors from palette
   return slides.map((slide, i): EducationSlide => ({
