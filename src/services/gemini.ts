@@ -31,8 +31,8 @@ ESTRUTURA SUGERIDA:
 
 Cada slide deve ter:
 - "title": título curto e divertido (máx 6 palavras)
-- "body": explicação simples para a idade (máx 3 frases curtas)
-- "narrationText": texto para narração em áudio, detalhado e natural (como uma professora falando com a criança), 2-4 frases
+- "body": explicação RICA e DETALHADA para a idade (3-6 frases). Não economize no conteúdo! Cada slide deve explorar o subtópico com profundidade, usando exemplos concretos, comparações do dia-a-dia da criança, e linguagem envolvente. O body é o coração do slide - deve ensinar de verdade, não apenas introduzir o assunto.
+- "narrationText": texto para narração em áudio, ainda mais detalhado e natural (como uma professora carinhosa falando com a criança), 4-8 frases. Deve expandir o body com explicações adicionais, perguntas retóricas ("Você sabia que...?"), e incentivos ("Muito bem!").
 - "scene": configuração visual do slide (OBRIGATÓRIO)
 
 FORMATO DA CENA (scene):
