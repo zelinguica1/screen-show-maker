@@ -9,14 +9,14 @@ export async function generateEducationalContent(
   if (!apiKey) throw new Error("VITE_GOOGLE_API_KEY não configurada");
 
   const colorPalettes = [
-    { bg: "#FBBF24", text: "#1E1B4B" },   // yellow / dark indigo
-    { bg: "#34D399", text: "#1E1B4B" },   // green / dark
-    { bg: "#60A5FA", text: "#FFFFFF" },   // blue / white
-    { bg: "#F472B6", text: "#FFFFFF" },   // pink / white
-    { bg: "#A78BFA", text: "#FFFFFF" },   // purple / white
-    { bg: "#FB923C", text: "#1E1B4B" },   // orange / dark
-    { bg: "#2DD4BF", text: "#1E1B4B" },   // teal / dark
-    { bg: "#F87171", text: "#FFFFFF" },   // red / white
+    { bg: "#FBBF24", text: "#1E1B4B" },
+    { bg: "#34D399", text: "#1E1B4B" },
+    { bg: "#60A5FA", text: "#FFFFFF" },
+    { bg: "#F472B6", text: "#FFFFFF" },
+    { bg: "#A78BFA", text: "#FFFFFF" },
+    { bg: "#FB923C", text: "#1E1B4B" },
+    { bg: "#2DD4BF", text: "#1E1B4B" },
+    { bg: "#F87171", text: "#FFFFFF" },
   ];
 
   const prompt = `Você é um educador infantil criando conteúdo para crianças de ${form.ageMin} a ${form.ageMax} anos.
@@ -27,11 +27,15 @@ Idioma: ${form.language}
 Crie exatamente 6 slides educativos. Cada slide deve ter:
 - "title": título curto e divertido (máx 5 palavras)
 - "body": explicação simples para a idade (máx 2 frases curtas)
+- "narrationText": texto para narração em áudio, mais detalhado e natural (como se estivesse falando com a criança), máx 3 frases
 - "visualType": um de ["text", "equation", "counting", "comparison", "example"]
-- "emoji": um emoji relevante para o slide
-- "items": lista de itens visuais (ex: ["🍎","🍎","🍎"] para contar 3, ou ["2 + 3 = 5"] para equação). Use emojis grandes e divertidos.
+- "items": lista de itens visuais usando SOMENTE TEXTO, sem emojis. Para contagem use números ("1", "2", "3"). Para equações use expressões ("2 + 3 = 5"). Para exemplos use palavras descritivas.
 
-IMPORTANTE: Use linguagem MUITO simples, divertida, com emojis. Pense que está falando com crianças pequenas.
+IMPORTANTE: 
+- NÃO use emojis em nenhum campo
+- Use linguagem MUITO simples e divertida
+- Os items devem ser texto puro para representações visuais
+- O narrationText deve soar natural como uma professora falando
 
 Responda APENAS com um array JSON válido de objetos, sem markdown, sem explicação.`;
 
@@ -55,11 +59,9 @@ Responda APENAS com um array JSON válido de objetos, sem markdown, sem explica�
 
   const data = await response.json();
   
-  // Gemini 2.5 Flash may return multiple parts (thinking + text)
   const parts = data.candidates?.[0]?.content?.parts;
   if (!parts || parts.length === 0) throw new Error("Resposta vazia da API");
   
-  // Find the last text part (skip thinking parts)
   const textPart = [...parts].reverse().find((p: any) => p.text && !p.thought);
   const text = textPart?.text;
   
@@ -67,21 +69,17 @@ Responda APENAS com um array JSON válido de objetos, sem markdown, sem explica�
 
   console.log("Gemini raw text:", text);
 
-  // Clean markdown code blocks if present
   const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-  
-  // Extract JSON array from response
   const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error("JSON não encontrado na resposta");
   
   const slides: any[] = JSON.parse(jsonMatch[0]);
 
-  // Assign colors from palette
   return slides.map((slide, i): EducationSlide => ({
     title: slide.title || "Slide",
     body: slide.body || "",
+    narrationText: slide.narrationText || `${slide.title}. ${slide.body}`,
     visualType: slide.visualType || "text",
-    emoji: slide.emoji || "📚",
     items: slide.items || [],
     bgColor: colorPalettes[i % colorPalettes.length].bg,
     textColor: colorPalettes[i % colorPalettes.length].text,

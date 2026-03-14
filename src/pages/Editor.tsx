@@ -1,22 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Player } from "@remotion/player";
-import { ArrowLeft, Download, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { EducationVideo } from "@/compositions/EducationVideo";
 import type { EducationSlide } from "@/types/education";
-
-const DEFAULT_DURATION = 150; // 5s at 30fps
 
 export default function Editor() {
   const navigate = useNavigate();
   const [slides, setSlides] = useState<EducationSlide[]>([]);
   const [topic, setTopic] = useState("");
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const [durationPerSlide, setDurationPerSlide] = useState(DEFAULT_DURATION);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("educationSlides");
@@ -25,7 +21,17 @@ export default function Editor() {
       navigate("/");
       return;
     }
-    setSlides(JSON.parse(stored));
+    const parsed: EducationSlide[] = JSON.parse(stored);
+
+    // Restore audio URLs from global if available
+    const audioUrls = (window as any).__tutorialKidsAudio as string[] | undefined;
+    if (audioUrls) {
+      parsed.forEach((slide, i) => {
+        if (audioUrls[i]) slide.audioUrl = audioUrls[i];
+      });
+    }
+
+    setSlides(parsed);
     setTopic(storedTopic || "");
   }, [navigate]);
 
@@ -35,7 +41,10 @@ export default function Editor() {
     );
   };
 
-  const totalDuration = slides.length * durationPerSlide;
+  const totalDuration = slides.reduce(
+    (sum, s) => sum + (s.durationInFrames || 150),
+    0
+  );
   const selected = slides[selectedIdx];
 
   if (!slides.length) return null;
@@ -77,16 +86,17 @@ export default function Editor() {
                     : "bg-secondary/50 border border-transparent hover:bg-secondary"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{slide.emoji}</span>
-                  <div className="min-w-0">
-                    <p className="font-medium truncate text-foreground">
-                      {slide.title}
-                    </p>
-                    <p className="text-muted-foreground truncate text-[10px]">
-                      {slide.body}
-                    </p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="font-medium truncate text-foreground">
+                    {slide.title}
+                  </p>
+                  <p className="text-muted-foreground truncate text-[10px]">
+                    {slide.body}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground mt-1">
+                    {((slide.durationInFrames || 150) / 30).toFixed(1)}s
+                    {slide.audioUrl && " · com áudio"}
+                  </p>
                 </div>
               </button>
             ))}
@@ -98,7 +108,7 @@ export default function Editor() {
           <div className="w-full max-w-3xl aspect-video rounded-xl overflow-hidden shadow-2xl border border-border">
             <Player
               component={EducationVideo as any}
-              inputProps={{ slides, durationPerSlide }}
+              inputProps={{ slides }}
               durationInFrames={Math.max(totalDuration, 1)}
               compositionWidth={1920}
               compositionHeight={1080}
@@ -108,22 +118,25 @@ export default function Editor() {
               autoPlay={false}
             />
           </div>
-          
+
           {/* Mini timeline */}
           <div className="w-full max-w-3xl flex gap-1.5">
             {slides.map((slide, i) => (
               <button
                 key={i}
                 onClick={() => setSelectedIdx(i)}
-                className={`flex-1 h-10 rounded-md flex items-center justify-center text-xs font-medium transition-all ${
-                  selectedIdx === i ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+                className={`h-10 rounded-md flex items-center justify-center text-xs font-medium transition-all ${
+                  selectedIdx === i
+                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                    : ""
                 }`}
                 style={{
                   backgroundColor: slide.bgColor,
                   color: slide.textColor,
+                  flex: slide.durationInFrames || 150,
                 }}
               >
-                {slide.emoji}
+                {i + 1}
               </button>
             ))}
           </div>
@@ -140,17 +153,24 @@ export default function Editor() {
               {/* Preview chip */}
               <div
                 className="rounded-lg p-4 text-center"
-                style={{ backgroundColor: selected.bgColor, color: selected.textColor }}
+                style={{
+                  backgroundColor: selected.bgColor,
+                  color: selected.textColor,
+                }}
               >
-                <span className="text-3xl">{selected.emoji}</span>
-                <p className="font-bold text-sm mt-1">{selected.title}</p>
+                <p className="font-bold text-sm">{selected.title}</p>
+                <p className="text-[10px] mt-1 opacity-70">
+                  {((selected.durationInFrames || 150) / 30).toFixed(1)}s
+                </p>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Título</Label>
                 <Input
                   value={selected.title}
-                  onChange={(e) => updateSlide(selectedIdx, { title: e.target.value })}
+                  onChange={(e) =>
+                    updateSlide(selectedIdx, { title: e.target.value })
+                  }
                   className="bg-secondary border-border text-sm"
                 />
               </div>
@@ -159,17 +179,10 @@ export default function Editor() {
                 <Label className="text-xs text-muted-foreground">Texto</Label>
                 <textarea
                   value={selected.body}
-                  onChange={(e) => updateSlide(selectedIdx, { body: e.target.value })}
+                  onChange={(e) =>
+                    updateSlide(selectedIdx, { body: e.target.value })
+                  }
                   className="w-full bg-secondary border border-border rounded-md p-2 text-sm min-h-[80px] resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Emoji</Label>
-                <Input
-                  value={selected.emoji || ""}
-                  onChange={(e) => updateSlide(selectedIdx, { emoji: e.target.value })}
-                  className="bg-secondary border-border text-sm"
                 />
               </div>
 
@@ -180,21 +193,10 @@ export default function Editor() {
                 <input
                   type="color"
                   value={selected.bgColor}
-                  onChange={(e) => updateSlide(selectedIdx, { bgColor: e.target.value })}
+                  onChange={(e) =>
+                    updateSlide(selectedIdx, { bgColor: e.target.value })
+                  }
                   className="w-full h-10 rounded-md cursor-pointer border border-border"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">
-                  Duração por slide: {(durationPerSlide / 30).toFixed(1)}s
-                </Label>
-                <Slider
-                  value={[durationPerSlide]}
-                  onValueChange={([v]) => setDurationPerSlide(v)}
-                  min={60}
-                  max={300}
-                  step={30}
                 />
               </div>
             </div>

@@ -5,8 +5,10 @@ import {
   interpolate,
   spring,
   Sequence,
+  Audio,
 } from "remotion";
 import type { EducationSlide } from "@/types/education";
+import { SlideVisuals } from "@/components/visuals/SlideVisuals";
 
 interface EducationSlideViewProps {
   slide: EducationSlide;
@@ -28,8 +30,6 @@ const EducationSlideView: React.FC<EducationSlideViewProps> = ({
 
   const titleY = spring({ frame, fps, config: { damping: 15, stiffness: 100 } });
   const bodyDelay = spring({ frame: frame - 15, fps, config: { damping: 15, stiffness: 100 } });
-  const itemsDelay = (i: number) =>
-    spring({ frame: frame - 25 - i * 5, fps, config: { damping: 12, stiffness: 120 } });
 
   const scale = interpolate(frame, [0, durationInFrames], [1, 1.03], {
     extrapolateRight: "clamp",
@@ -49,18 +49,6 @@ const EducationSlideView: React.FC<EducationSlideViewProps> = ({
         fontFamily: "'Space Grotesk', system-ui, sans-serif",
       }}
     >
-      {/* Emoji */}
-      <div
-        style={{
-          fontSize: 100,
-          marginBottom: 20,
-          transform: `translateY(${interpolate(titleY, [0, 1], [-40, 0])}px)`,
-          opacity: titleY,
-        }}
-      >
-        {slide.emoji}
-      </div>
-
       {/* Title */}
       <h1
         style={{
@@ -93,62 +81,38 @@ const EducationSlideView: React.FC<EducationSlideViewProps> = ({
         {slide.body}
       </p>
 
-      {/* Visual Items */}
-      {slide.items && slide.items.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            gap: 24,
-            marginTop: 40,
-            flexWrap: "wrap",
-            justifyContent: "center",
-            maxWidth: "90%",
-          }}
-        >
-          {slide.items.map((item, i) => {
-            const s = itemsDelay(i);
-            return (
-              <div
-                key={i}
-                style={{
-                  fontSize: 56,
-                  opacity: s,
-                  transform: `scale(${interpolate(s, [0, 1], [0.5, 1])}) translateY(${interpolate(s, [0, 1], [20, 0])}px)`,
-                  background: "rgba(255,255,255,0.25)",
-                  borderRadius: 20,
-                  padding: "16px 28px",
-                  fontWeight: 700,
-                  color: slide.textColor,
-                }}
-              >
-                {item}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Visual Items (React components instead of emojis) */}
+      <SlideVisuals
+        visualType={slide.visualType}
+        items={slide.items}
+        textColor={slide.textColor}
+      />
+
+      {/* Audio */}
+      {slide.audioUrl && <Audio src={slide.audioUrl} />}
     </AbsoluteFill>
   );
 };
 
 interface EducationVideoProps {
   slides: EducationSlide[];
-  durationPerSlide?: number; // frames
+  defaultDurationPerSlide?: number;
 }
 
 export const EducationVideo: React.FC<EducationVideoProps> = ({
   slides,
-  durationPerSlide = 150,
+  defaultDurationPerSlide = 150,
 }) => {
   let currentFrame = 0;
   return (
     <AbsoluteFill style={{ backgroundColor: "#0d1117" }}>
       {slides.map((slide, i) => {
         const from = currentFrame;
-        currentFrame += durationPerSlide;
+        const dur = slide.durationInFrames || defaultDurationPerSlide;
+        currentFrame += dur;
         return (
-          <Sequence key={i} from={from} durationInFrames={durationPerSlide}>
-            <EducationSlideView slide={slide} durationInFrames={durationPerSlide} />
+          <Sequence key={i} from={from} durationInFrames={dur}>
+            <EducationSlideView slide={slide} durationInFrames={dur} />
           </Sequence>
         );
       })}
