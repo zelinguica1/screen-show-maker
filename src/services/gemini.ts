@@ -83,20 +83,86 @@ Responda APENAS com um array JSON válido de objetos, sem markdown, sem explica�
   const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
   const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error("JSON não encontrado na resposta");
-  
-  // Fix common JSON issues from Gemini: trailing commas, unescaped quotes
-  let jsonStr = jsonMatch[0]
-    .replace(/,\s*([}\]])/g, "$1")           // trailing commas
-    .replace(/(['"])?(\w+)(['"])?\s*:/g, '"$2":') // unquoted keys
-    .replace(/:\s*'([^']*)'/g, ': "$1"');     // single-quoted values
-  
+
+  const removeTrailingCommas = (value: string) => value.replace(/,\s*([}\]])/g, "$1");
+
+  const repairUnescapedQuotesInStrings = (value: string) => {
+    let result = "";
+    let inString = false;
+    let isEscaped = false;
+    let stringMode: "key" | "value" | null = null;
+
+    const getPrevNonWhitespace = (index: number) => {
+      for (let i = index - 1; i >= 0; i--) {
+        if (!/\s/.test(value[i])) return value[i];
+      }
+      return "";
+    };
+
+    const getNextNonWhitespace = (index: number) => {
+      for (let i = index + 1; i < value.length; i++) {
+        if (!/\s/.test(value[i])) return value[i];
+      }
+      return "";
+    };
+
+    for (let i = 0; i < value.length; i++) {
+      const char = value[i];
+
+      if (!inString) {
+        if (char === '"') {
+          inString = true;
+          isEscaped = false;
+          const prev = getPrevNonWhitespace(i);
+          stringMode = prev === ":" ? "value" : "key";
+        }
+        result += char;
+        continue;
+      }
+
+      if (isEscaped) {
+        result += char;
+        isEscaped = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        result += char;
+        isEscaped = true;
+        continue;
+      }
+
+      if (char === '"') {
+        const next = getNextNonWhitespace(i);
+        const isClosingQuote =
+          stringMode === "key"
+            ? next === ":"
+            : next === "," || next === "}" || next === "]";
+
+        if (isClosingQuote) {
+          inString = false;
+          stringMode = null;
+          result += char;
+        } else {
+          result += '\\"';
+        }
+        continue;
+      }
+
+      result += char;
+    }
+
+    return result;
+  };
+
   let slides: any[];
+  let jsonStr = removeTrailingCommas(jsonMatch[0]);
+
   try {
     slides = JSON.parse(jsonStr);
   } catch (e) {
     console.error("JSON parse failed, attempting repair:", jsonStr);
-    // Last resort: try to eval-safe parse by replacing problematic chars
-    jsonStr = jsonStr.replace(/[\x00-\x1F\x7F]/g, " ");
+    jsonStr = repairUnescapedQuotesInStrings(jsonStr).replace(/[\x00-\x1F\x7F]/g, " ");
     slides = JSON.parse(jsonStr);
   }
 
