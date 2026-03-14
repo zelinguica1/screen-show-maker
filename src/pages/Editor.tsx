@@ -97,7 +97,7 @@ export default function Editor() {
         <main className="flex-1 flex flex-col items-center justify-center p-6 min-w-0 gap-4">
           <div className="w-full max-w-3xl aspect-video rounded-xl overflow-hidden shadow-2xl border border-border">
             <Player
-              component={EducationVideo}
+              component={EducationVideo as any}
               inputProps={{ slides, durationPerSlide }}
               durationInFrames={Math.max(totalDuration, 1)}
               compositionWidth={1920}
