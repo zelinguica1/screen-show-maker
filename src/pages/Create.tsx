@@ -93,8 +93,11 @@ export default function Create() {
       sessionStorage.setItem("educationSlides", JSON.stringify(storableSlides));
       sessionStorage.setItem("educationTopic", form.topic);
 
-      // Store audio URLs in a global for the editor to pick up
-      (window as any).__tutorialKidsAudio = slidesWithAudio.map((s) => s.audioUrl);
+      if (withAudio) {
+        (window as any).__tutorialKidsAudio = slidesWithAudio.map((s) => s.audioUrl);
+      } else {
+        (window as any).__tutorialKidsAudio = null;
+      }
 
       navigate("/editor");
     } catch (err: any) {
