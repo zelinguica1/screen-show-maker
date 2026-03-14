@@ -62,13 +62,20 @@ Responda APENAS com um array JSON vÃ¡lido de objetos, sem markdown, sem explicaÃ
   }
 
   const data = await response.json();
-  
-  const parts = data.candidates?.[0]?.content?.parts;
+
+  const candidate = data.candidates?.[0];
+  if (!candidate) throw new Error("Resposta vazia da API");
+
+  if (candidate.finishReason === "MAX_TOKENS") {
+    throw new Error("A resposta da IA foi cortada por limite de tokens. Tente novamente.");
+  }
+
+  const parts = candidate.content?.parts;
   if (!parts || parts.length === 0) throw new Error("Resposta vazia da API");
-  
+
   const textPart = [...parts].reverse().find((p: any) => p.text && !p.thought);
   const text = textPart?.text;
-  
+
   if (!text) throw new Error("Resposta vazia da API");
 
   console.log("Gemini raw text:", text);
