@@ -45,9 +45,12 @@ Responda APENAS com um array JSON v√°lido de objetos, sem markdown, sem explica√
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 2048,
+        temperature: 0.7,
+        maxOutputTokens: 4096,
         responseMimeType: "application/json",
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
       },
     }),
   });
