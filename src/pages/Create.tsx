@@ -56,27 +56,36 @@ export default function Create() {
       setStep("content");
       const slides = await generateEducationalContent(form);
 
-      // Step 2: Generate audio for each slide
-      setStep("audio");
-      setAudioProgress(0);
+      let slidesWithAudio: EducationSlide[];
 
-      const ttsResults = await generateAllSlideTTS(
-        slides,
-        "Kore",
-        (done, total) => setAudioProgress(Math.round((done / total) * 100))
-      );
+      if (withAudio) {
+        // Step 2: Generate audio for each slide
+        setStep("audio");
+        setAudioProgress(0);
 
-      // Step 3: Merge audio data into slides with calculated durations
-      const slidesWithAudio: EducationSlide[] = slides.map((slide, i) => {
-        const tts = ttsResults[i];
-        const audioFrames = Math.ceil(tts.durationSec * FPS);
-        const durationInFrames = Math.max(audioFrames + PADDING_FRAMES, MIN_SLIDE_FRAMES);
-        return {
+        const ttsResults = await generateAllSlideTTS(
+          slides,
+          "Kore",
+          (done, total) => setAudioProgress(Math.round((done / total) * 100))
+        );
+
+        // Step 3: Merge audio data into slides with calculated durations
+        slidesWithAudio = slides.map((slide, i) => {
+          const tts = ttsResults[i];
+          const audioFrames = Math.ceil(tts.durationSec * FPS);
+          const durationInFrames = Math.max(audioFrames + PADDING_FRAMES, MIN_SLIDE_FRAMES);
+          return {
+            ...slide,
+            audioUrl: tts.audioUrl,
+            durationInFrames,
+          };
+        });
+      } else {
+        slidesWithAudio = slides.map((slide) => ({
           ...slide,
-          audioUrl: tts.audioUrl,
-          durationInFrames,
-        };
-      });
+          durationInFrames: MIN_SLIDE_FRAMES + PADDING_FRAMES,
+        }));
+      }
 
       // Store and navigate
       // Note: audioUrl are blob URLs, they persist in memory during the session
