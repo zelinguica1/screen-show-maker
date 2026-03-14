@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, GraduationCap, Loader2, Volume2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +35,7 @@ export default function Create() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"idle" | "content" | "audio">("idle");
+  const [withAudio, setWithAudio] = useState(true);
   const [audioProgress, setAudioProgress] = useState(0);
   const [form, setForm] = useState<TopicFormData>({
     topic: "",
@@ -54,27 +56,36 @@ export default function Create() {
       setStep("content");
       const slides = await generateEducationalContent(form);
 
-      // Step 2: Generate audio for each slide
-      setStep("audio");
-      setAudioProgress(0);
+      let slidesWithAudio: EducationSlide[];
 
-      const ttsResults = await generateAllSlideTTS(
-        slides,
-        "Kore",
-        (done, total) => setAudioProgress(Math.round((done / total) * 100))
-      );
+      if (withAudio) {
+        // Step 2: Generate audio for each slide
+        setStep("audio");
+        setAudioProgress(0);
 
-      // Step 3: Merge audio data into slides with calculated durations
-      const slidesWithAudio: EducationSlide[] = slides.map((slide, i) => {
-        const tts = ttsResults[i];
-        const audioFrames = Math.ceil(tts.durationSec * FPS);
-        const durationInFrames = Math.max(audioFrames + PADDING_FRAMES, MIN_SLIDE_FRAMES);
-        return {
+        const ttsResults = await generateAllSlideTTS(
+          slides,
+          "Kore",
+          (done, total) => setAudioProgress(Math.round((done / total) * 100))
+        );
+
+        // Step 3: Merge audio data into slides with calculated durations
+        slidesWithAudio = slides.map((slide, i) => {
+          const tts = ttsResults[i];
+          const audioFrames = Math.ceil(tts.durationSec * FPS);
+          const durationInFrames = Math.max(audioFrames + PADDING_FRAMES, MIN_SLIDE_FRAMES);
+          return {
+            ...slide,
+            audioUrl: tts.audioUrl,
+            durationInFrames,
+          };
+        });
+      } else {
+        slidesWithAudio = slides.map((slide) => ({
           ...slide,
-          audioUrl: tts.audioUrl,
-          durationInFrames,
-        };
-      });
+          durationInFrames: MIN_SLIDE_FRAMES + PADDING_FRAMES,
+        }));
+      }
 
       // Store and navigate
       // Note: audioUrl are blob URLs, they persist in memory during the session
@@ -82,8 +93,11 @@ export default function Create() {
       sessionStorage.setItem("educationSlides", JSON.stringify(storableSlides));
       sessionStorage.setItem("educationTopic", form.topic);
 
-      // Store audio URLs in a global for the editor to pick up
-      (window as any).__tutorialKidsAudio = slidesWithAudio.map((s) => s.audioUrl);
+      if (withAudio) {
+        (window as any).__tutorialKidsAudio = slidesWithAudio.map((s) => s.audioUrl);
+      } else {
+        (window as any).__tutorialKidsAudio = null;
+      }
 
       navigate("/editor");
     } catch (err: any) {
@@ -198,6 +212,19 @@ export default function Create() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Audio Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                Narração em áudio
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Gerar voz com IA para cada slide
+              </p>
+            </div>
+            <Switch checked={withAudio} onCheckedChange={setWithAudio} disabled={loading} />
           </div>
 
           {/* Progress */}
