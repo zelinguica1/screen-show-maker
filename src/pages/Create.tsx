@@ -35,6 +35,7 @@ export default function Create() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"idle" | "content" | "audio">("idle");
+  const [withAudio, setWithAudio] = useState(true);
   const [audioProgress, setAudioProgress] = useState(0);
   const [form, setForm] = useState<TopicFormData>({
     topic: "",
