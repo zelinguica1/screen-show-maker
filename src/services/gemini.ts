@@ -47,6 +47,7 @@ Responda APENAS com um array JSON v√°lido de objetos, sem markdown, sem explica√
       generationConfig: {
         temperature: 0.8,
         maxOutputTokens: 2048,
+        responseMimeType: "application/json",
       },
     }),
   });
