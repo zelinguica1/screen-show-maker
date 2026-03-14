@@ -151,10 +151,9 @@ export default function Editor() {
             <div className="space-y-4 animate-fade-in">
               {/* Preview chip */}
               <div
-                className="rounded-lg p-4 text-center"
+                className="rounded-lg p-4 text-center text-white"
                 style={{
-                  backgroundColor: selected.bgColor,
-                  color: selected.textColor,
+                  background: selected.scene?.backgroundGradient || selected.bgColor,
                 }}
               >
                 <p className="font-bold text-sm">{selected.title}</p>
